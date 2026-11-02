@@ -1,0 +1,98 @@
+// Create these measures on the imported Customers table.
+
+Total Customers =
+COUNTROWS ( Customers )
+
+Attrited Customers =
+CALCULATE (
+    [Total Customers],
+    KEEPFILTERS ( Customers[Attrition_Flag] = "Attrited Customer" )
+)
+
+Existing Customers =
+CALCULATE (
+    [Total Customers],
+    KEEPFILTERS ( Customers[Attrition_Flag] = "Existing Customer" )
+)
+
+Churn Rate =
+DIVIDE ( [Attrited Customers], [Total Customers] )
+
+Retention Rate =
+DIVIDE ( [Existing Customers], [Total Customers] )
+
+Average Transaction Count =
+AVERAGE ( Customers[Total_Trans_Ct] )
+
+Average Transaction Amount =
+AVERAGE ( Customers[Total_Trans_Amt] )
+
+Total Customer Transaction Amount =
+SUM ( Customers[Total_Trans_Amt] )
+
+Average Inactive Months =
+AVERAGE ( Customers[Months_Inactive_12_mon] )
+
+Average Bank Contacts =
+AVERAGE ( Customers[Contacts_Count_12_mon] )
+
+Average Credit Limit =
+AVERAGE ( Customers[Credit_Limit] )
+
+Average Utilization =
+AVERAGE ( Customers[Avg_Utilization_Ratio] )
+
+// ModelEvaluation is the held-out test prediction CSV, not the full customer table.
+Model Test Rows =
+COUNTROWS ( ModelEvaluation )
+
+True Positives =
+CALCULATE (
+    [Model Test Rows],
+    ModelEvaluation[Actual_Attrition] = "Attrited Customer",
+    ModelEvaluation[Predicted_Attrition] = "Attrited Customer"
+)
+
+False Positives =
+CALCULATE (
+    [Model Test Rows],
+    ModelEvaluation[Actual_Attrition] = "Existing Customer",
+    ModelEvaluation[Predicted_Attrition] = "Attrited Customer"
+)
+
+False Negatives =
+CALCULATE (
+    [Model Test Rows],
+    ModelEvaluation[Actual_Attrition] = "Attrited Customer",
+    ModelEvaluation[Predicted_Attrition] = "Existing Customer"
+)
+
+Test Precision =
+DIVIDE ( [True Positives], [True Positives] + [False Positives] )
+
+Test Recall =
+DIVIDE ( [True Positives], [True Positives] + [False Negatives] )
+
+Test F1 =
+DIVIDE ( 2 * [Test Precision] * [Test Recall], [Test Precision] + [Test Recall] )
+
+// Optional calculated column: descriptive grouping of the source customer ages.
+Age Band =
+SWITCH (
+    TRUE (),
+    Customers[Customer_Age] < 30, "Under 30",
+    Customers[Customer_Age] < 40, "30–39",
+    Customers[Customer_Age] < 50, "40–49",
+    Customers[Customer_Age] < 60, "50–59",
+    "60+"
+)
+
+// Optional calculated column for a utilization distribution chart.
+Utilization Band =
+SWITCH (
+    TRUE (),
+    Customers[Avg_Utilization_Ratio] < 0.10, "0–9%",
+    Customers[Avg_Utilization_Ratio] < 0.30, "10–29%",
+    Customers[Avg_Utilization_Ratio] < 0.60, "30–59%",
+    "60–100%"
+)
